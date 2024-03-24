@@ -55,7 +55,7 @@ fn main() {
                         stream.flush().unwrap();
                     }
                     None => {
-                        stream.write(BAD_RESPONSE.as_bytes()).unwrap();
+                        stream.write(format!("{}\r\n\r\n", BAD_RESPONSE).as_bytes()).unwrap();
                         stream.flush().unwrap();
                     }
                 }

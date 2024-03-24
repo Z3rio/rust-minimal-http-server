@@ -13,7 +13,7 @@ fn main() {
     }    
 
     fn index_handler(_raw_name: &str) -> String {
-        return OK_RESPONSE.to_string();
+        return format!("{}\r\n\r\n", OK_RESPONSE.to_string());
     } 
 
     fn echo_handler(raw_name: &str) -> String {

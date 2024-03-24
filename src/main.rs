@@ -18,7 +18,7 @@ fn main() {
 
     fn echo_handler(raw_name: &str) -> String {
         let resp_content = raw_name.replace("/echo/", "");
-        return format!("{}Content-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
+        return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
     }
 
     let routes: Vec<Route> = vec![

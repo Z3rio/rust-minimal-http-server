@@ -1,5 +1,5 @@
 use std::{io::{Read, Write}, net::TcpListener};
-
+use regex::Regex;
 use itertools::Itertools;
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
@@ -7,14 +7,25 @@ const BAD_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 
 fn main() {
     struct Route {
-        name: String,
-        method: String
+        name: Regex,
+        method: String,
+        handle_route: Box<dyn Fn(&str) -> String>
     }    
 
+    fn echo_handler(raw_name: &str) -> String {
+        return format!("{}{}", OK_RESPONSE, raw_name.replace("/echo/", "")).to_string();
+    }
+
     let routes: Vec<Route> = vec![
+        // Route {
+        //     name: Regex::new("^\\/$").unwrap(),
+        //     method: String::from("GET"),
+        //     content: None
+        // },
         Route {
-            name: String::from("/"),
-            method: String::from("GET")
+            name: Regex::new("^\\/echo\\/(.*)$").unwrap(),
+            method: String::from("GET"),
+            handle_route: Box::new(echo_handler)
         }
     ];
 
@@ -29,15 +40,19 @@ fn main() {
                 stream.read(&mut buffer).unwrap();
 
                 let data = String::from_utf8_lossy(&buffer[..]);
-                let splits = data.split("\r\n").collect_vec();
-                let splits2 = splits[0].split(" ").collect_vec();
+                let req_lines = data.split("\r\n").collect_vec();
+                let first_line_splits = req_lines[0].split(" ").collect_vec();
+                let route_pos = routes.iter().position(|r| r.name.captures(first_line_splits[1]).is_some() && r.method == first_line_splits[0].to_string());
 
-                if routes.iter().any(|r| r.name == splits2[1].to_string() && r.method == splits2[0].to_string()) {
-                    stream.write(OK_RESPONSE.as_bytes()).unwrap();
-                    stream.flush().unwrap();
-                } else {
-                    stream.write(BAD_RESPONSE.as_bytes()).unwrap();
-                    stream.flush().unwrap();
+                match route_pos {
+                    Some(route_pos) => {
+                        stream.write((routes[route_pos].handle_route)(first_line_splits[1]).as_bytes()).unwrap();
+                        stream.flush().unwrap();
+                    }
+                    None => {
+                        stream.write(BAD_RESPONSE.as_bytes()).unwrap();
+                        stream.flush().unwrap();
+                    }
                 }
             }
             Err(e) => {

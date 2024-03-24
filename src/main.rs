@@ -2,8 +2,8 @@ use std::{io::{Read, Write}, net::TcpListener};
 use regex::Regex;
 use itertools::Itertools;
 
-const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
-const BAD_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
+const OK_RESPONSE: &str = "HTTP/1.1 200 OK";
+const BAD_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND";
 
 fn main() {
     struct Route {
@@ -17,7 +17,8 @@ fn main() {
     } 
 
     fn echo_handler(raw_name: &str) -> String {
-        return format!("{}{}", OK_RESPONSE, raw_name.replace("/echo/", "")).to_string();
+        let resp_content = raw_name.replace("/echo/", "");
+        return format!("{}Content-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
     }
 
     let routes: Vec<Route> = vec![

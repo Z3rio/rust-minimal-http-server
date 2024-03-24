@@ -1,4 +1,4 @@
-use std::{io::{Read, Write}, net::TcpListener};
+use std::{io::{Read, Write}, net::TcpListener, thread};
 use regex::Regex;
 use itertools::Itertools;
 
@@ -28,31 +28,13 @@ fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
     }
 }
 
+struct Route {
+    name: Regex,
+    method: String,
+    handle_route: Box<dyn Fn(&str, Vec<&str>) -> String>
+}
+
 fn main() {
-    struct Route {
-        name: Regex,
-        method: String,
-        handle_route: Box<dyn Fn(&str, Vec<&str>) -> String>
-    }
-
-    let routes: Vec<Route> = vec![
-        Route {
-            name: Regex::new("^\\/$").unwrap(),
-            method: String::from("GET"),
-            handle_route: Box::new(index_handler)
-        },
-        Route {
-            name: Regex::new("^\\/echo\\/(.*)$").unwrap(),
-            method: String::from("GET"),
-            handle_route: Box::new(echo_handler)
-        },
-        Route {
-            name: Regex::new("^\\/user-agent$").unwrap(),
-            method: String::from("GET"),
-            handle_route: Box::new(user_agent_handler)
-        }
-    ];
-
     println!("Logs from your program will appear here!");
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
@@ -60,29 +42,49 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut buffer = [0; 512];
-                stream.read(&mut buffer).unwrap();
+                thread::spawn(move || {
+                    let routes: Vec<Route> = vec![
+                        Route {
+                            name: Regex::new("^\\/$").unwrap(),
+                            method: String::from("GET"),
+                            handle_route: Box::new(index_handler)
+                        },
+                        Route {
+                            name: Regex::new("^\\/echo\\/(.*)$").unwrap(),
+                            method: String::from("GET"),
+                            handle_route: Box::new(echo_handler)
+                        },
+                        Route {
+                            name: Regex::new("^\\/user-agent$").unwrap(),
+                            method: String::from("GET"),
+                            handle_route: Box::new(user_agent_handler)
+                        }
+                    ];
 
-                let data = String::from_utf8_lossy(&buffer[..]);
-                let mut req_lines = data.split("\r\n").collect_vec();
-                req_lines.remove(req_lines.len() - 1);
-                req_lines.remove(req_lines.len() - 1);
-                let first_line_splits = req_lines[0].split(" ").collect_vec();
-                let route_pos = routes.iter().position(|r| r.name.captures(first_line_splits[1]).is_some() && r.method == first_line_splits[0].to_string());
-                
-                let mut header_lines = req_lines.clone();
-                header_lines.remove(0);
+                    let mut buffer = [0; 512];
+                    stream.read(&mut buffer).unwrap();
 
-                match route_pos {
-                    Some(route_pos) => {
-                        stream.write((routes[route_pos].handle_route)(first_line_splits[1], header_lines).as_bytes()).unwrap();
-                        stream.flush().unwrap();
+                    let data = String::from_utf8_lossy(&buffer[..]);
+                    let mut req_lines = data.split("\r\n").collect_vec();
+                    req_lines.remove(req_lines.len() - 1);
+                    req_lines.remove(req_lines.len() - 1);
+                    let first_line_splits = req_lines[0].split(" ").collect_vec();
+                    let route_pos = routes.iter().position(|r| r.name.captures(first_line_splits[1]).is_some() && r.method == first_line_splits[0].to_string());
+                    
+                    let mut header_lines = req_lines.clone();
+                    header_lines.remove(0);
+
+                    match route_pos {
+                        Some(route_pos) => {
+                            stream.write((routes[route_pos].handle_route)(first_line_splits[1], header_lines).as_bytes()).unwrap();
+                            stream.flush().unwrap();
+                        }
+                        None => {
+                            stream.write(format!("{}\r\n\r\n", BAD_RESPONSE).as_bytes()).unwrap();
+                            stream.flush().unwrap();
+                        }
                     }
-                    None => {
-                        stream.write(format!("{}\r\n\r\n", BAD_RESPONSE).as_bytes()).unwrap();
-                        stream.flush().unwrap();
-                    }
-                }
+                });
             }
             Err(e) => {
                 println!("error: {}", e);

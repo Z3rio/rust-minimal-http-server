@@ -12,16 +12,20 @@ fn main() {
         handle_route: Box<dyn Fn(&str) -> String>
     }    
 
+    fn index_handler(_raw_name: &str) -> String {
+        return OK_RESPONSE.to_string();
+    } 
+
     fn echo_handler(raw_name: &str) -> String {
         return format!("{}{}", OK_RESPONSE, raw_name.replace("/echo/", "")).to_string();
     }
 
     let routes: Vec<Route> = vec![
-        // Route {
-        //     name: Regex::new("^\\/$").unwrap(),
-        //     method: String::from("GET"),
-        //     content: None
-        // },
+        Route {
+            name: Regex::new("^\\/$").unwrap(),
+            method: String::from("GET"),
+            handle_route: Box::new(index_handler)
+        },
         Route {
             name: Regex::new("^\\/echo\\/(.*)$").unwrap(),
             method: String::from("GET"),

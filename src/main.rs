@@ -26,7 +26,7 @@ fn main() {
 
         match user_agent_header {
             Some(user_agent_header) => {
-                let resp_content = headers[user_agent_header].to_lowercase().replace("user-agent: ", "");
+                let resp_content = &(headers[user_agent_header].to_string())[12..(headers[user_agent_header].len())];
                 return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE.to_string(), resp_content.len(), resp_content);
             }
             None => {

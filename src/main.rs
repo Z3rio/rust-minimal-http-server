@@ -5,34 +5,34 @@ use itertools::Itertools;
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK";
 const BAD_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND";
 
+fn index_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
+    return format!("{}\r\n\r\n", OK_RESPONSE.to_string());
+} 
+
+fn echo_handler(raw_name: &str, _headers: Vec<&str>) -> String {
+    let resp_content = raw_name.replace("/echo/", "");
+    return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
+}
+
+fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
+    let user_agent_header = headers.clone().into_iter().position(|h| h.to_lowercase().contains("user-agent"));
+
+    match user_agent_header {
+        Some(user_agent_header) => {
+            let resp_content = &(headers[user_agent_header].to_string())[12..(headers[user_agent_header].len())];
+            return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE.to_string(), resp_content.len(), resp_content);
+        }
+        None => {
+            return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
+        }
+    }
+}
+
 fn main() {
     struct Route {
         name: Regex,
         method: String,
         handle_route: Box<dyn Fn(&str, Vec<&str>) -> String>
-    }    
-
-    fn index_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
-        return format!("{}\r\n\r\n", OK_RESPONSE.to_string());
-    } 
-
-    fn echo_handler(raw_name: &str, _headers: Vec<&str>) -> String {
-        let resp_content = raw_name.replace("/echo/", "");
-        return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
-    }
-
-    fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
-        let user_agent_header = headers.clone().into_iter().position(|h| h.to_lowercase().contains("user-agent"));
-
-        match user_agent_header {
-            Some(user_agent_header) => {
-                let resp_content = &(headers[user_agent_header].to_string())[12..(headers[user_agent_header].len())];
-                return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE.to_string(), resp_content.len(), resp_content);
-            }
-            None => {
-                return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
-            }
-        }
     }
 
     let routes: Vec<Route> = vec![

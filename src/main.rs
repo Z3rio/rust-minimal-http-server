@@ -10,16 +10,16 @@ const ARGS: Lazy<Vec<String>> = Lazy::new(|| {
     return args;
 });
 
-fn index_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
+fn index_handler(_raw_name: &str, _headers: Vec<&str>, _body: &str) -> String {
     return format!("{}\r\n\r\n", OK_RESPONSE.to_string());
 } 
 
-fn echo_handler(raw_name: &str, _headers: Vec<&str>) -> String {
+fn echo_handler(raw_name: &str, _headers: Vec<&str>, _body: &str) -> String {
     let resp_content = raw_name.replace("/echo/", "");
     return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, resp_content.len(), resp_content).to_string();
 }
 
-fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
+fn user_agent_handler(_raw_name: &str, headers: Vec<&str>, _body: &str) -> String {
     let user_agent_header = headers.clone().into_iter().position(|h| h.to_lowercase().contains("user-agent"));
 
     match user_agent_header {
@@ -33,11 +33,11 @@ fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
     }
 }
 
-fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
+fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>, body: &str) -> String {
     return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
 }
 
-fn get_file_handler(raw_name: &str, headers: Vec<&str>) -> String {
+fn get_file_handler(raw_name: &str, headers: Vec<&str>, _body: &str) -> String {
     let file_name = &raw_name["/files/".len()..];
     let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
     let contents = read_to_string(full_path);
@@ -48,25 +48,29 @@ fn get_file_handler(raw_name: &str, headers: Vec<&str>) -> String {
         }
 
         Err(_) => {
-            return bad_response_handler(raw_name, headers);
+            return bad_response_handler(raw_name, headers, body);
         }
     }
 }
 
-fn post_file_handler(raw_name: &str, headers: Vec<&str>) -> String {
+fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     let file_name = &raw_name["/files/".len()..];
     let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
-    let contents = read_to_string(full_path);
+    
+    println!("full_path: {}", full_path);
+    println!("body:      {}", body);
 
-    match contents {
-        Ok(contents) => {
-            return format!("{}\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
-        }
+    // let contents = read_to_string(full_path);
 
-        Err(_) => {
-            return bad_response_handler(raw_name, headers);
-        }
-    }
+    // match contents {
+    //     Ok(contents) => {
+    //         return format!("{}\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
+    //     }
+
+    //     Err(_) => {
+    //         return bad_response_handler(raw_name, headers);
+    //     }
+    // }
 }
 
 struct Route<'a> {
@@ -75,7 +79,7 @@ struct Route<'a> {
     method: &'a str
 }
 
-fn get_route_method(route: &str) -> Box<dyn Fn(&str, Vec<&str>) -> String> {
+fn get_route_method(route: &str) -> Box<dyn Fn(&str, Vec<&str>, body: &str) -> String> {
     if route == "index" {
         return Box::new(index_handler)
     } else if route == "echo" {
@@ -132,11 +136,9 @@ fn stream_handler(mut stream: TcpStream) {
     let first_line_splits = req_lines[0].split(" ").collect_vec();
     let route_pos = ROUTES.iter().position(|r| Regex::new(r.route).unwrap().captures(first_line_splits[1]).is_some() && r.method == first_line_splits[0].to_string());
     
-    println!("{}", body);
-
     match route_pos {
         Some(route_pos) => {
-            stream.write(get_route_method(ROUTES[route_pos].name)(first_line_splits[1], header_lines).as_bytes()).unwrap();
+            stream.write(get_route_method(ROUTES[route_pos].name)(first_line_splits[1], header_lines, body).as_bytes()).unwrap();
             stream.flush().unwrap();
         }
         None => {

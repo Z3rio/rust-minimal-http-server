@@ -109,7 +109,7 @@ fn main() {
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
-    println!("{:?}", ARGS);
+    println!("{:?}", ARGS.to_vec());
 
     for stream in listener.incoming() {
         match stream {

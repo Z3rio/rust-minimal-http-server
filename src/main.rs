@@ -102,7 +102,7 @@ fn stream_handler(mut stream: TcpStream) {
 fn main() {
     println!("Logs from your program will appear here!");
 
-    let mut args = env::args();
+    let args: Vec<String> = env::args().collect();
     println!("args {:?}", args);
     // args.next();
     // args.next();

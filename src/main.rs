@@ -1,4 +1,4 @@
-use std::{env, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
+use std::{env, fs::read_to_string, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
 use regex::Regex;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -24,7 +24,7 @@ fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
 
     match user_agent_header {
         Some(user_agent_header) => {
-            let resp_content = &(headers[user_agent_header].to_string())[12..(headers[user_agent_header].len())];
+            let resp_content = &(headers[user_agent_header].to_string())["user-agent: ".len()..];
             return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE.to_string(), resp_content.len(), resp_content);
         }
         None => {
@@ -35,6 +35,22 @@ fn user_agent_handler(_raw_name: &str, headers: Vec<&str>) -> String {
 
 fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
     return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
+}
+
+fn get_file_handler(raw_name: &str, headers: Vec<&str>) -> String {
+    let file_name = &raw_name["/files/".len()..];
+    let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
+    let contents = read_to_string(full_path);
+
+    match contents {
+        Ok(contents) => {
+            return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
+        }
+
+        Err(_) => {
+            return bad_response_handler(raw_name, headers);
+        }
+    }
 }
 
 struct Route<'a> {
@@ -50,6 +66,8 @@ fn get_route_method(route: &str) -> Box<dyn Fn(&str, Vec<&str>) -> String> {
         return Box::new(echo_handler)
     } else if route == "user_agent" {
         return Box::new(user_agent_handler)
+    } else if route == "get_file" {
+        return Box::new(get_file_handler)
     } else {
         return Box::new(bad_response_handler)
     }
@@ -72,7 +90,7 @@ const ROUTES: &[Route] = &[
         method: "GET"
     },
     Route {
-        name: "file",
+        name: "get_file",
         route: "^\\/files\\/(.*)$",
         method: "GET"
     }
@@ -108,8 +126,6 @@ fn main() {
     println!("Logs from your program will appear here!");
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
-
-    println!("{:?}", ARGS.get(2));
 
     for stream in listener.incoming() {
         match stream {

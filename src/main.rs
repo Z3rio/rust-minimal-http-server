@@ -1,4 +1,4 @@
-use std::{io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
+use std::{env, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
 use regex::Regex;
 use itertools::Itertools;
 
@@ -96,6 +96,12 @@ fn stream_handler(mut stream: TcpStream) {
 
 fn main() {
     println!("Logs from your program will appear here!");
+
+    let mut args = env::args();
+    args.next();
+    args.next();
+    let directory = args.next().unwrap_or(String::new());
+    println!("{}", directory);
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 

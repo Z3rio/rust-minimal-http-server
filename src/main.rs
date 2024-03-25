@@ -68,7 +68,7 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
         Ok(mut file) => {
             match file.write_all(body.as_bytes()) {
                 Ok(_) => {
-                    return format!("{}\r\n\r\n", OK_RESPONSE);
+                    return String::from("HTTP/1.1 201 CREATED\r\n\r\n");
                 }
 
                 Err(_) => {

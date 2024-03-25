@@ -56,11 +56,6 @@ fn get_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
 fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     let file_name = &raw_name["/files/".len()..];
     let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
-    
-    // println!("raw_name:  {}", raw_name);
-    // println!("headers:   {:?}", headers);
-    // println!("full_path: {}", full_path);
-    // println!("body:      {}", body);
 
     let file = File::create(full_path);
     
@@ -81,18 +76,6 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
             return bad_response_handler(raw_name, headers, body)
         }
     }
-
-    // let contents = read_to_string(full_path);
-
-    // match contents {
-    //     Ok(contents) => {
-    //         return format!("{}\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
-    //     }
-
-    //     Err(_) => {
-    //         return bad_response_handler(raw_name, headers);
-    //     }
-    // }
 }
 
 struct Route<'a> {
@@ -146,15 +129,11 @@ const ROUTES: &[Route] = &[
 ];
 
 fn stream_handler(mut stream: TcpStream) {
-    let mut buffer = [0; 512];
-    stream.read(&mut buffer).unwrap();
+    let mut buffer = [0; 10240];
+    let n = stream.read(&mut buffer).unwrap();
 
-    let data = String::from_utf8_lossy(&buffer[..]);
-
-    println!("data: {}", data);
-
+    let data = String::from_utf8_lossy(&buffer[..n]);
     let req_lines = data.split("\r\n").collect_vec();
-    println!("req_lines: {:?}", req_lines);
     let header_lines = req_lines.clone()[1..req_lines.len() - 2].to_vec();
     let body = req_lines[req_lines.len() - 1];
 

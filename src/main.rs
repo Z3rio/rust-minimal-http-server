@@ -154,6 +154,7 @@ fn stream_handler(mut stream: TcpStream) {
     println!("data: {}", data);
 
     let req_lines = data.split("\r\n").collect_vec();
+    println!("req_lines: {:?}", req_lines);
     let header_lines = req_lines.clone()[1..req_lines.len() - 2].to_vec();
     let body = req_lines[req_lines.len() - 1];
 

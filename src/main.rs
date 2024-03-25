@@ -65,6 +65,11 @@ const ROUTES: &[Route] = &[
         name: "user_agent",
         route: "^\\/user-agent$",
         method: "GET"
+    },
+    Route {
+        name: "file",
+        route: "^\\/files\\/(.*)$",
+        method: "GET"
     }
 ];
 
@@ -98,10 +103,11 @@ fn main() {
     println!("Logs from your program will appear here!");
 
     let mut args = env::args();
-    args.next();
-    args.next();
-    let directory = args.next().unwrap_or(String::new());
-    println!("directory {}", directory);
+    println!("args {:?}", args);
+    // args.next();
+    // args.next();
+    // let directory = args.next().unwrap_or(String::new());
+    // println!("directory {}", directory);
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 

@@ -44,7 +44,7 @@ fn get_file_handler(raw_name: &str, headers: Vec<&str>) -> String {
 
     match contents {
         Ok(contents) => {
-            return format!("{}\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
+            return format!("{}\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}", OK_RESPONSE, contents.len(), contents).to_string();
         }
 
         Err(_) => {

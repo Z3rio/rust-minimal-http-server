@@ -57,16 +57,16 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     let file_name = &raw_name["/files/".len()..];
     let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
     
-    println!("raw_name:  {}", raw_name);
-    println!("headers:   {:?}", headers);
-    println!("full_path: {}", full_path);
-    println!("body:      {}", body);
+    // println!("raw_name:  {}", raw_name);
+    // println!("headers:   {:?}", headers);
+    // println!("full_path: {}", full_path);
+    // println!("body:      {}", body);
 
     let file = File::create(file_name);
     
     match file {
         Ok(mut file) => {
-            match file.write_all(body.as_bytes()) {
+            match file.write(body.as_bytes()) {
                 Ok(_) => {
                     return String::from("HTTP/1.1 201 CREATED\r\n\r\n");
                 }

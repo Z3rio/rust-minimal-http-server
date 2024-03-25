@@ -62,7 +62,7 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     // println!("full_path: {}", full_path);
     // println!("body:      {}", body);
 
-    let file = File::create(file_name);
+    let file = File::create(full_path);
     
     match file {
         Ok(mut file) => {

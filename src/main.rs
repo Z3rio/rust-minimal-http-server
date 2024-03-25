@@ -101,7 +101,7 @@ fn main() {
     args.next();
     args.next();
     let directory = args.next().unwrap_or(String::new());
-    println!("{}", directory);
+    println!("directory {}", directory);
 
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 

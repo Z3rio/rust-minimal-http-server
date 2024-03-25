@@ -37,7 +37,7 @@ fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>, body: &str) -> Str
     return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
 }
 
-fn get_file_handler(raw_name: &str, headers: Vec<&str>, _body: &str) -> String {
+fn get_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     let file_name = &raw_name["/files/".len()..];
     let full_path = format!("{}{}", ARGS.get(2).expect("Directory arg not defined"), file_name);
     let contents = read_to_string(full_path);
@@ -71,6 +71,8 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     //         return bad_response_handler(raw_name, headers);
     //     }
     // }
+
+    return String::from("");
 }
 
 struct Route<'a> {
@@ -79,7 +81,7 @@ struct Route<'a> {
     method: &'a str
 }
 
-fn get_route_method(route: &str) -> Box<dyn Fn(&str, Vec<&str>, body: &str) -> String> {
+fn get_route_method(route: &str) -> Box<dyn Fn(&str, Vec<&str>, &str) -> String> {
     if route == "index" {
         return Box::new(index_handler)
     } else if route == "echo" {
@@ -142,7 +144,7 @@ fn stream_handler(mut stream: TcpStream) {
             stream.flush().unwrap();
         }
         None => {
-            stream.write(bad_response_handler(first_line_splits[1], header_lines).as_bytes()).unwrap();
+            stream.write(bad_response_handler(first_line_splits[1], header_lines, body).as_bytes()).unwrap();
             stream.flush().unwrap();
         }
     }

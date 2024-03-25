@@ -151,6 +151,8 @@ fn stream_handler(mut stream: TcpStream) {
 
     let data = String::from_utf8_lossy(&buffer[..]);
 
+    println!("data: {}", data);
+
     let req_lines = data.split("\r\n").collect_vec();
     let header_lines = req_lines.clone()[1..req_lines.len() - 2].to_vec();
     let body = req_lines[req_lines.len() - 1];

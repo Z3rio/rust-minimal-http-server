@@ -1,4 +1,4 @@
-use std::{env, fs::read_to_string, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
+use std::{env, fs::{read_to_string, File}, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
 use regex::Regex;
 use itertools::Itertools;
 use once_cell::sync::Lazy;
@@ -33,7 +33,7 @@ fn user_agent_handler(_raw_name: &str, headers: Vec<&str>, _body: &str) -> Strin
     }
 }
 
-fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>, body: &str) -> String {
+fn bad_response_handler(_raw_name: &str, _headers: Vec<&str>, _body: &str) -> String {
     return format!("{}\r\n\r\n", BAD_RESPONSE).to_string();
 }
 
@@ -62,6 +62,26 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     println!("full_path: {}", full_path);
     println!("body:      {}", body);
 
+    let file = File::create(file_name);
+    
+    match file {
+        Ok(mut file) => {
+            match file.write_all(body.as_bytes()) {
+                Ok(_) => {
+                    return format!("{}\r\n\r\n", OK_RESPONSE);
+                }
+
+                Err(_) => {
+                    return bad_response_handler(raw_name, headers, body)
+                }
+            }
+        }
+
+        Err(_) => {
+            return bad_response_handler(raw_name, headers, body)
+        }
+    }
+
     // let contents = read_to_string(full_path);
 
     // match contents {
@@ -73,8 +93,6 @@ fn post_file_handler(raw_name: &str, headers: Vec<&str>, body: &str) -> String {
     //         return bad_response_handler(raw_name, headers);
     //     }
     // }
-
-    return String::from("");
 }
 
 struct Route<'a> {

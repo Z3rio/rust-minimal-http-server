@@ -124,15 +124,15 @@ fn stream_handler(mut stream: TcpStream) {
     stream.read(&mut buffer).unwrap();
 
     let data = String::from_utf8_lossy(&buffer[..]);
-    let mut req_lines = data.split("\r\n").collect_vec();
-    println!("{:?}", req_lines);
-    req_lines.remove(req_lines.len() - 1);
-    req_lines.remove(req_lines.len() - 1);
+
+    let req_lines = data.split("\r\n").collect_vec();
+    let header_lines = req_lines.clone()[1..req_lines.len() - 2].to_vec();
+    let body = req_lines[req_lines.len() - 1];
+
     let first_line_splits = req_lines[0].split(" ").collect_vec();
     let route_pos = ROUTES.iter().position(|r| Regex::new(r.route).unwrap().captures(first_line_splits[1]).is_some() && r.method == first_line_splits[0].to_string());
     
-    let mut header_lines = req_lines.clone();
-    header_lines.remove(0);
+    println!("{}", body);
 
     match route_pos {
         Some(route_pos) => {

@@ -1,9 +1,14 @@
 use std::{env, io::{Read, Write}, net::{TcpListener, TcpStream}, thread};
 use regex::Regex;
 use itertools::Itertools;
+use once_cell::sync::Lazy;
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK";
 const BAD_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND";
+const ARGS: Lazy<Vec<String>> = Lazy::new(|| {
+    let args: Vec<String> = env::args().collect();
+    return args;
+});
 
 fn index_handler(_raw_name: &str, _headers: Vec<&str>) -> String {
     return format!("{}\r\n\r\n", OK_RESPONSE.to_string());
@@ -102,14 +107,9 @@ fn stream_handler(mut stream: TcpStream) {
 fn main() {
     println!("Logs from your program will appear here!");
 
-    let args: Vec<String> = env::args().collect();
-    println!("args {:?}", args);
-    // args.next();
-    // args.next();
-    // let directory = args.next().unwrap_or(String::new());
-    // println!("directory {}", directory);
-
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
+
+    println!("{}", ARGS[2]);
 
     for stream in listener.incoming() {
         match stream {
